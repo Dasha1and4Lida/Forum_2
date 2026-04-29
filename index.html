@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Форум колледжа</title>
+    <style>
+        body { font-family: Arial; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h1, h2 { color: #333; }
+        input, textarea, select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .topic { border-bottom: 1px solid #eee; padding: 10px 0; }
+        .topic h3 { margin: 0 0 5px 0; }
+        .topic h3 a { color: #007bff; text-decoration: none; }
+        .meta { color: #666; font-size: 12px; }
+        .flash { padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 5px; margin-bottom: 20px; }
+        .user-bar { text-align: right; margin-bottom: 20px; }
+        .btn-logout { background: #dc3545; color: white; padding: 5px 10px; text-decoration: none; border-radius: 5px; }
+        .filter-btn { padding: 8px 15px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; display: inline-block; }
+        .filter-btn.active { background: #0056b3; }
+        .subject-filter { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="/" style="text-decoration: none; color: inherit;">
+        <h1>Форум колледжа</h1>
+    </a>
+
+    <div class="user-bar">
+    {% if session.user_id %}
+        Привет, {{ session.user_name }}
+        | <a href="/chat">Чаты</a>
+        | <a href="/logout" class="btn-logout">Выйти</a>
+    {% else %}
+        <a href="/login">Вход</a> | <a href="/register">Регистрация</a>
+    {% endif %}
+</div>
+
+    <!-- Поиск -->
+    <div class="card" style="padding: 15px;">
+        <form method="GET" action="/" style="display: flex; gap: 10px;">
+            <input type="text" name="q" placeholder="Поиск по вопросам..." value="{{ query if query else '' }}" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+            <button type="submit" style="width: auto; padding: 10px 20px;">Найти</button>
+            {% if query %}
+                <a href="/" style="padding: 10px 20px; background: #6c757d; color: white; border-radius: 5px; text-decoration: none;">Сбросить</a>
+            {% endif %}
+        </form>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="flash">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if session.user_id %}
+    <div class="card">
+        <h2>Новый вопрос</h2>
+        <form method="POST" action="/create_topic" enctype="multipart/form-data">
+            <select name="section_id" required>
+                <option value="">Выберите предмет</option>
+                {% for section in sections %}
+                    <option value="{{ section[0] }}">{{ section[1] }}</option>
+                {% endfor %}
+            </select>
+            <input type="text" name="title" placeholder="Заголовок вопроса" required>
+            <textarea name="content" rows="5" placeholder="Описание проблемы..." required></textarea>
+            <div style="margin: 10px 0;">
+                <label style="display: block; margin-bottom: 5px;">Прикрепить файлы:</label>
+                <input type="file" name="files" multiple style="width: auto;">
+                <small style="color: #666;">Можно выбрать несколько файлов (картинки, документы, архивы до 16MB)</small>
+            </div>
+            <button type="submit">Отправить вопрос</button>
+        </form>
+    </div>
+    {% else %}
+    <div class="card">
+        <p><a href="/login">Войдите</a> или <a href="/register">зарегистрируйтесь</a>, чтобы задать вопрос.</p>
+    </div>
+    {% endif %}
+
+    <!-- Фильтр по предметам (только если нет поиска) -->
+    {% if not query %}
+    <div class="subject-filter">
+        <a href="/" class="filter-btn {% if not current_section %}active{% endif %}">Все</a>
+        {% for section in sections %}
+            <a href="/section/{{ section[0] }}" class="filter-btn {% if current_section == section[0] %}active{% endif %}">
+                {{ section[1] }}
+            </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Список вопросов -->
+    <div class="card">
+        <h2>
+            {% if query %}
+                Результаты поиска: "{{ query }}"
+            {% else %}
+                Все вопросы
+            {% endif %}
+        </h2>
+
+        {% if query and topics|length == 0 %}
+            <p>Ничего не найдено по запросу "{{ query }}". Попробуйте другие ключевые слова.</p>
+        {% endif %}
+
+        {% for topic in topics %}
+        <div class="topic">
+            <h3><a href="/topic/{{ topic[0] }}">{{ topic[1] }}</a></h3>
+            <div class="meta">
+                Раздел: {{ topic[9] }} | 
+                Автор: {{ topic[8] }} | 
+                {{ topic[7] }}
+            </div>
+        </div>
+        {% else %}
+            {% if not query %}
+                <p>Пока нет вопросов. Будьте первым!</p>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Чаты</title>
+    <style>
+        body { font-family: Arial; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 500px; margin: 0 auto; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .user { padding: 12px; border-bottom: 1px solid #eee; }
+        .user a { text-decoration: none; color: #333; display: block; }
+        .user:hover { background: #f0f0f0; }
+        a { color: #007bff; text-decoration: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <h1>Чаты</h1>
+        <p><a href="/">На главную</a></p>
+        <hr>
+        {% for user in users %}
+        <div class="user">
+            <a href="/chat/{{ user[0] }}">💬 {{ user[1] }}</a>
+        </div>
+        {% else %}
+            <p>Нет других пользователей</p>
+        {% endfor %}
+    </div>
+</div>
+</body>
+</html>
