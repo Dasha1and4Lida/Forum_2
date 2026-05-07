@@ -113,51 +113,38 @@ def logout():
     flash('Вы вышли из системы')
     return redirect('/')
 
-@app.route('/create_topic', methods=['GET', 'POST'])
+@app.route('/create_topic', methods=['POST'])
 @login_required
 def create_topic():
+    title = request.form['title']
+    content = request.form['content']
+    section_id = request.form['section_id']
+    author_id = session['user_id']
+    
     conn = sqlite3.connect('db.sqlite3')
-    sections = conn.execute("SELECT * FROM sections").fetchall()
+    cursor = conn.cursor()
     
-    if request.method == 'POST':
-        title = request.form['title']
-        content = request.form['content']
-        section_id = request.form['section_id']
-        author_id = session['user_id']
-        
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-            INSERT INTO topics (title, content, section_id, author_id)
-            VALUES (?, ?, ?, ?)
-        """, (title, content, section_id, author_id))
-        
-        topic_id = cursor.lastrowid
-        
-        cursor.execute("""
-            INSERT INTO messages (content, topic_id, author_id)
-            VALUES (?, ?, ?)
-        """, (content, topic_id, author_id))
-        
-        message_id = cursor.lastrowid
-        
-        files = request.files.getlist('files')
-        for file in files:
-            if file and file.filename:
-                file_content = file.read()
-                cursor.execute("""
-                    INSERT INTO files (filename, content, mime_type, size, message_id)
-                    VALUES (?, ?, ?, ?, ?)
-                """, (file.filename, file_content, file.content_type, len(file_content), message_id))
-        
-        conn.commit()
-        conn.close()
-        
-        flash('Тема создана!')
-        return redirect('/')
+    cursor.execute("""
+        INSERT INTO topics (title, content, section_id, author_id)
+        VALUES (?, ?, ?, ?)
+    """, (title, content, section_id, author_id))
     
+    topic_id = cursor.lastrowid
+    
+    files = request.files.getlist('files')
+    for file in files:
+        if file and file.filename:
+            file_content = file.read()
+            cursor.execute("""
+                INSERT INTO files (filename, content, mime_type, size, message_id)
+                VALUES (?, ?, ?, ?, ?)
+            """, (file.filename, file_content, file.content_type, len(file_content), None))
+    
+    conn.commit()
     conn.close()
-    return render_template('create_topic.html', sections=sections)
+    
+    flash('Тема создана!')
+    return redirect('/')
 
 @app.route('/topic/<int:topic_id>')
 def view_topic(topic_id):
